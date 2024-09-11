@@ -4,10 +4,8 @@
 name: Go
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  repository_dispatch:
+    types: [src-update]
 
 jobs:
 
@@ -22,10 +20,28 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.20'
-
-    - name: Build
-      run: go build -v ./...
+        go-version: '1.23'
 
     - name: Test
       run: go test -v ./...
+
+    - name: Build-Darwin-Arm64
+      run: GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=${{ github.event.client_payload.version }}" -o dist/wgctl-darwin-arm64 .
+
+    - name: Build-Windows-Amd64
+      run: GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=${{ github.event.client_payload.version }}" -o dist/wgctl-windows-amd64 .
+
+    - name: Build-Linux-Amd64
+      run: GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${{ github.event.client_payload.version }}" -o dist/wgctl-linux-amd64 .
+      
+    - name: Create Release
+      id: create_release
+      uses: ncipollo/release-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      with:
+        name: ${{ github.event.client_payload.short_hash }}
+        commit: ${{ github.event.client_payload.sha }}
+        tag: ${{ github.event.client_payload.short_hash }}
+        artifacts: "dist/*"
+        generateReleaseNotes: true
