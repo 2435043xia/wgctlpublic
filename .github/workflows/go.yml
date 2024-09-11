@@ -44,4 +44,3 @@ jobs:
         commit: ${{ github.event.client_payload.sha }}
         tag: ${{ github.event.client_payload.short_hash }}
         artifacts: "dist/*"
-        generateReleaseNotes: true
